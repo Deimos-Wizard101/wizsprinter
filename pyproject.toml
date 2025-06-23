@@ -14,7 +14,7 @@ python = "^3.13"
 lark = "^1.1.9"
 
 [tool.poetry.dependencies.wizwalker]
-git = "https://codeberg.org/notfaj/wizwalker"
+git = "https://github.com/Deimos-Wizard101/wizwalker"
 branch = "development"
 
 [tool.poetry.dev-dependencies]
