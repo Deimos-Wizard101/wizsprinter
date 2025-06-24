@@ -10,7 +10,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.11"
 lark = "^1.1.9"
 
 [tool.poetry.dependencies.wizwalker]
