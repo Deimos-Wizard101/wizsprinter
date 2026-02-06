@@ -14,8 +14,8 @@ python = "^3.13"
 lark = "^1.1.9"
 
 [tool.poetry.dependencies.wizwalker]
-git = "https://codeberg.org/Deimos-Wizard101/wizwalker"
-branch = "development"
+git = "https://github.com/Deimos-Wizard101/wizwalker"
+branch = "depfix-test"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
