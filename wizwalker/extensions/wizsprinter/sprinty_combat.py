@@ -332,6 +332,16 @@ async def does_card_contain_reqs(card: CombatCard, template: TemplateSpell) -> b
                     pass
 
 
+    if matched_reqs == needed_matches and is_aoe_req:
+        # Reject cards that have single-target damage effects — they require
+        # target selection and are not true AOEs (e.g. Storm Beetle: single-target
+        # damage + team blade falsely matches type_aoe via the blade's target).
+        for e in effects:
+            eff_type = await e.effect_type()
+            target = await e.effect_target()
+            if eff_type in damage_effects and target in enemy_targets and target not in aoe_targets:
+                return False
+
     return matched_reqs == needed_matches
 
 
