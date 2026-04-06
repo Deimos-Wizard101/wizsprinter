@@ -345,6 +345,17 @@ async def does_card_contain_reqs(card: CombatCard, template: TemplateSpell) -> b
     return matched_reqs == needed_matches
 
 
+async def card_requires_target_selection(card: CombatCard) -> bool:
+    """Check if a card requires the player to select a target (i.e. not a true AOE).
+    Returns True if any damage/steal effect targets a single enemy rather than a team."""
+    effects = await get_inner_card_effects(card)
+    for e in effects:
+        eff_type = await e.effect_type()
+        eff_target = await e.effect_target()
+        if eff_type in damage_effects and eff_target in enemy_targets and eff_target not in aoe_targets:
+            return True
+    return False
+
 
 class SprintyCombat(CombatHandler):
     def __init__(self, client: wizwalker.client.Client, config_provider: BaseCombatBackend, handle_mouseless: bool = False):
@@ -763,6 +774,10 @@ class SprintyCombat(CombatHandler):
         target = await self.try_get_config_target(move_config.target)
 
         if target == False:  # Wouldn't want a None to mess it up
+            return False
+
+        # AOE target (None) but card requires single-target selection — skip
+        if target is None and await card_requires_target_selection(cur_card):
             return False
 
         if cur_card == "willcast":
