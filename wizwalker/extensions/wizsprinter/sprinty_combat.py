@@ -776,9 +776,11 @@ class SprintyCombat(CombatHandler):
         if target == False:  # Wouldn't want a None to mess it up
             return False
 
-        # AOE target (None) but card requires single-target selection — skip
-        if target is None and await card_requires_target_selection(cur_card):
-            return False
+        # Card has single-target damage — only compatible with enemy/boss targeting
+        if await card_requires_target_selection(cur_card):
+            ttype = move_config.target.target_type if move_config.target else None
+            if ttype in (TargetType.type_aoe, TargetType.type_self, TargetType.type_ally):
+                return False
 
         if cur_card == "willcast":
             if willcasted:
