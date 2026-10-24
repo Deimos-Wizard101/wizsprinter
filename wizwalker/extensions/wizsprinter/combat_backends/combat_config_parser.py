@@ -1,6 +1,7 @@
 from typing import *
 
 from lark import Transformer
+from wizwalker.memory.memory_objects.conditionals import school_id_to_names
 
 from .combat_api import *
 
@@ -37,7 +38,7 @@ def get_sprinty_grammar():
             cond_op: CMP_OP
             CMP_OP: "<=" | ">=" | "!=" | "==" | "<" | ">"
 
-            cond_value: COND_NUMBER cond_percent?
+            cond_value: (COND_NUMBER | NAME) cond_percent?
             cond_percent: "%"
             COND_NUMBER: /\d+(\.\d+)?/
 
@@ -144,6 +145,8 @@ def get_sprinty_grammar():
 
 
 class TreeToConfig(Transformer):
+    _SCHOOL_IDS = {name.casefold(): school_id for name, school_id in school_id_to_names.items()}
+
     def spell(self, items, enchant: bool = False):
         if type(items[0]) is not str:
             if enchant:
@@ -179,8 +182,21 @@ class TreeToConfig(Transformer):
         return Move(*items)
 
     def cond_clause(self, items):
-        target, attr, op, value = items
-        return Condition(target, attr, op, *value)
+        target, attr, op, (value, is_percent) = items
+        if attr == "school":
+            if not isinstance(value, str) or is_percent:
+                raise ValueError("school requires a school name without %, e.g. fire")
+            if op not in (ComparisonOp.eq, ComparisonOp.ne):
+                raise ValueError("school only supports == and != comparisons")
+            if target.aggregation is AggregationMode.agg_avg:
+                raise ValueError("school supports any/all groups, not avg")
+            name = value.casefold()
+            if name not in self._SCHOOL_IDS:
+                raise ValueError(f"Unknown school '{value}'. Valid: {', '.join(self._SCHOOL_IDS)}")
+            value = self._SCHOOL_IDS[name]
+        elif isinstance(value, str):
+            raise ValueError(f"{attr} requires a numeric condition value")
+        return Condition(target, attr, op, value, is_percent)
 
     def condition(self, items):
         # Filter out the COND_AND tokens (lark keeps them in the child list
@@ -235,7 +251,7 @@ class TreeToConfig(Transformer):
         return ComparisonOp(str(items[0]))
 
     def cond_value(self, items):
-        value = float(items[0])
+        value = items[0] if isinstance(items[0], float) else str(items[0])
         is_percent = len(items) > 1
         return (value, is_percent)
 

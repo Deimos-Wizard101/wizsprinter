@@ -13,7 +13,7 @@ from wizwalker.memory.memory_objects.conditionals import charm_effect_types, war
 from .combat_backends.combat_config_parser import TargetType, TargetData, MoveConfig, TemplateSpell \
     , NamedSpell, SpellType, Spell, DrawSpell, Condition, AllCondition, ConditionTarget, ComparisonOp, AggregationMode \
     , GambitSpec, ClearSpec, EchoSpec, SwapSpec, HangingType, HANGING_CATEGORIES, hanging_type_info
-from wizwalker.memory.memory_objects.conditionals import ReqHangingAura
+from wizwalker.memory.memory_objects.conditionals import ReqHangingAura, school_to_str
 from .combat_backends.backend_base import BaseCombatBackend
 
 from enum import Enum, auto
@@ -882,6 +882,14 @@ class SprintyCombat(CombatHandler):
         return False
 
     async def _read_member_attr(self, member: CombatMember, condition: Condition) -> Optional[float]:
+        if condition.attribute == "school":
+            participant = await member.get_participant()
+            if participant is None:
+                return None
+            school_id = await participant.primary_magic_school_id()
+            # Unknown schools must not satisfy != by accident.
+            return float(school_id) if school_id in school_to_str else None
+
         # Check for hanging effect pseudo-attributes first
         if condition.attribute in self._HANGING_ATTRS:
             category, disposition = self._HANGING_ATTRS[condition.attribute]
